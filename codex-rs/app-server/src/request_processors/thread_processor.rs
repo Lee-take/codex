@@ -1527,36 +1527,57 @@ impl ThreadRequestProcessor {
     ) -> Result<ThreadMetadataUpdateResponse, JSONRPCErrorError> {
         let ThreadMetadataUpdateParams {
             thread_id,
+            cwd,
             git_info,
         } = params;
 
         let thread_uuid = ThreadId::from_string(&thread_id)
             .map_err(|err| invalid_request(format!("invalid thread id: {err}")))?;
 
-        let Some(ThreadMetadataGitInfoUpdateParams {
-            sha,
-            branch,
-            origin_url,
-        }) = git_info
-        else {
-            return Err(invalid_request("gitInfo must include at least one field"));
+        let cwd = cwd
+            .map(|cwd| {
+                AbsolutePathBuf::relative_to_current_dir(cwd.as_str())
+                    .map(AbsolutePathBuf::into_path_buf)
+                    .map_err(|err| {
+                        invalid_params(format!("invalid thread/metadata/update cwd `{cwd}`: {err}"))
+                    })
+            })
+            .transpose()?;
+
+        let git_info = match git_info {
+            Some(ThreadMetadataGitInfoUpdateParams {
+                sha,
+                branch,
+                origin_url,
+            }) => {
+                if sha.is_none() && branch.is_none() && origin_url.is_none() {
+                    return Err(invalid_request("gitInfo must include at least one field"));
+                }
+
+                let git_sha = Self::normalize_thread_metadata_git_field(sha, "gitInfo.sha")?;
+                let git_branch =
+                    Self::normalize_thread_metadata_git_field(branch, "gitInfo.branch")?;
+                let git_origin_url =
+                    Self::normalize_thread_metadata_git_field(origin_url, "gitInfo.originUrl")?;
+
+                Some(StoreGitInfoPatch {
+                    sha: git_sha,
+                    branch: git_branch,
+                    origin_url: git_origin_url,
+                })
+            }
+            None => None,
         };
 
-        if sha.is_none() && branch.is_none() && origin_url.is_none() {
-            return Err(invalid_request("gitInfo must include at least one field"));
+        if cwd.is_none() && git_info.is_none() {
+            return Err(invalid_request(
+                "thread metadata update must include cwd or gitInfo",
+            ));
         }
 
-        let git_sha = Self::normalize_thread_metadata_git_field(sha, "gitInfo.sha")?;
-        let git_branch = Self::normalize_thread_metadata_git_field(branch, "gitInfo.branch")?;
-        let git_origin_url =
-            Self::normalize_thread_metadata_git_field(origin_url, "gitInfo.originUrl")?;
-
         let patch = StoreThreadMetadataPatch {
-            git_info: Some(StoreGitInfoPatch {
-                sha: git_sha,
-                branch: git_branch,
-                origin_url: git_origin_url,
-            }),
+            cwd,
+            git_info,
             ..Default::default()
         };
 

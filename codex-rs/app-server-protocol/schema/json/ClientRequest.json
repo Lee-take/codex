@@ -3307,6 +3307,13 @@
     },
     "ThreadMetadataUpdateParams": {
       "properties": {
+        "cwd": {
+          "description": "Patch the stored working directory for this thread. Relative paths are resolved against the app-server process cwd before they are persisted.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "gitInfo": {
           "anyOf": [
             {

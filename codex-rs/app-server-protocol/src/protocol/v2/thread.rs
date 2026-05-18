@@ -653,6 +653,10 @@ pub struct ThreadGoalClearResponse {
 #[ts(export_to = "v2/")]
 pub struct ThreadMetadataUpdateParams {
     pub thread_id: String,
+    /// Patch the stored working directory for this thread. Relative paths are
+    /// resolved against the app-server process cwd before they are persisted.
+    #[ts(optional = nullable)]
+    pub cwd: Option<String>,
     /// Patch the stored Git metadata for this thread.
     /// Omit a field to leave it unchanged, set it to `null` to clear it, or
     /// provide a string to replace the stored value.

@@ -516,6 +516,7 @@ impl AppServerSession {
                 request_id,
                 params: ThreadMetadataUpdateParams {
                     thread_id: thread_id.to_string(),
+                    cwd: None,
                     git_info: Some(ThreadMetadataGitInfoUpdateParams {
                         sha: None,
                         branch: Some(Some(branch)),
