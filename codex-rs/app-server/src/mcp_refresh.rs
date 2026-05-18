@@ -13,6 +13,8 @@ pub(crate) async fn queue_strict_refresh(
     thread_manager: &Arc<ThreadManager>,
     config_manager: &ConfigManager,
 ) -> io::Result<()> {
+    thread_manager.plugins_manager().clear_cache();
+    thread_manager.skills_manager().clear_cache();
     config_manager
         .load_latest_config(/*fallback_cwd*/ None)
         .await?;

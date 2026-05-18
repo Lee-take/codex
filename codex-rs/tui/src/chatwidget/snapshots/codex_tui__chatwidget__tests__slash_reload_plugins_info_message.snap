@@ -1,0 +1,6 @@
+---
+source: tui/src/chatwidget/tests/slash_commands.rs
+assertion_line: 1752
+expression: rendered
+---
+• Plugins reload requested. MCP tools refresh on the next turn; newly added skills and plugin instructions are visible in new threads.
